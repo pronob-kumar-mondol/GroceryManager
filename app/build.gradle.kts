@@ -55,4 +55,5 @@ dependencies {
     implementation(libs.coil.compose)
     ksp(libs.androidx.room.compiler)
     debugImplementation(libs.androidx.ui.tooling)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 }
