@@ -1,20 +1,22 @@
 package com.grocery.manager.ui
 
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
-import com.grocery.manager.ui.screens.CompanyScreen
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.grocery.manager.ui.screens.AddEditProductScreen
+import com.grocery.manager.ui.screens.CompanyScreen
 import com.grocery.manager.ui.screens.HomeScreen
+import com.grocery.manager.ui.screens.SplashScreen
 import com.grocery.manager.viewmodel.CategoryViewModel
 import com.grocery.manager.viewmodel.CompanyViewModel
 import com.grocery.manager.viewmodel.ProductViewModel
 
 object Routes {
+    const val SPLASH = "splash"
     const val HOME = "home"
     const val ADD_PRODUCT = "add_product"
     const val EDIT_PRODUCT = "edit_product/{productId}"
@@ -32,8 +34,18 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = Routes.HOME
+        startDestination = Routes.SPLASH
     ) {
+        composable(Routes.SPLASH) {
+            SplashScreen(
+                onSplashComplete = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.SPLASH) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Routes.HOME) {
             HomeScreen(
                 productViewModel = productViewModel,
