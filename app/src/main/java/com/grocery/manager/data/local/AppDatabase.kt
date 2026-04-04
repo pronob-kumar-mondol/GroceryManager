@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [
@@ -11,9 +13,10 @@ import androidx.room.RoomDatabase
         Category::class,
         Product::class,
         Variant::class,
-        RecentSearch::class
+        RecentSearch::class,
+        Contact::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -22,10 +25,29 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun productDao(): ProductDao
     abstract fun variantDao(): VariantDao
+    abstract fun contactDao(): ContactDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+            CREATE TABLE IF NOT EXISTS `contact` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `companyId` INTEGER NOT NULL,
+                `name` TEXT NOT NULL,
+                `role` TEXT NOT NULL DEFAULT '',
+                `phone` TEXT NOT NULL,
+                FOREIGN KEY(`companyId`) REFERENCES `company`(`id`) ON DELETE CASCADE
+            )
+        """)
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_contact_companyId` ON `contact` (`companyId`)"
+                )
+            }
+        }
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -33,7 +55,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "grocery_manager_database"
-                ).build()
+                )
+                    .addMigrations(MIGRATION_1_2)
+                    .build()
                 INSTANCE = instance
                 instance
             }

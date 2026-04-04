@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.grocery.manager.data.local.AppDatabase
 import com.grocery.manager.data.local.Company
+import com.grocery.manager.data.local.Contact
 import com.grocery.manager.data.repository.CompanyRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -23,15 +24,15 @@ class CompanyViewModel(application: Application) : AndroidViewModel(application)
             initialValue = emptyList()
         )
 
-    fun insertCompany(company: Company) {
+    fun insertCompanyWithContacts(company: Company, contacts: List<Contact>) {
         viewModelScope.launch {
-            repository.insertCompany(company)
+            repository.insertCompanyWithContacts(company, contacts)
         }
     }
 
-    fun updateCompany(company: Company) {
+    fun updateCompanyWithContacts(company: Company, contacts: List<Contact>) {
         viewModelScope.launch {
-            repository.updateCompany(company)
+            repository.updateCompanyWithContacts(company, contacts)
         }
     }
 
@@ -40,6 +41,9 @@ class CompanyViewModel(application: Application) : AndroidViewModel(application)
             repository.deleteCompany(company)
         }
     }
+
+    fun getContactsForCompany(companyId: Int) =
+        repository.getContactsForCompany(companyId)
 
     suspend fun getCompanyById(id: Int): Company? =
         repository.getCompanyById(id)

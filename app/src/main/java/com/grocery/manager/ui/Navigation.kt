@@ -3,6 +3,7 @@ package com.grocery.manager.ui
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
+import com.grocery.manager.ui.screens.CompanyScreen
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -61,6 +62,13 @@ fun AppNavigation() {
                 companyViewModel = companyViewModel,
                 categoryViewModel = categoryViewModel,
                 productId = productId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.COMPANIES) {
+            CompanyScreen(
+                companyViewModel = companyViewModel,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
