@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.grocery.manager.ui.screens.AddEditProductScreen
 import com.grocery.manager.ui.screens.HomeScreen
 import com.grocery.manager.viewmodel.CategoryViewModel
 import com.grocery.manager.viewmodel.CompanyViewModel
@@ -41,6 +42,27 @@ fun AppNavigation() {
             )
         }
 
-        // We will add more screens here as we build them
+        composable(Routes.ADD_PRODUCT) {
+            AddEditProductScreen(
+                productViewModel = productViewModel,
+                companyViewModel = companyViewModel,
+                categoryViewModel = categoryViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Routes.EDIT_PRODUCT,
+            arguments = listOf(navArgument("productId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getInt("productId")
+            AddEditProductScreen(
+                productViewModel = productViewModel,
+                companyViewModel = companyViewModel,
+                categoryViewModel = categoryViewModel,
+                productId = productId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
     }
 }
