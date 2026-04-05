@@ -56,4 +56,5 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     debugImplementation(libs.androidx.ui.tooling)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation("androidx.appcompat:appcompat:1.7.0")
 }

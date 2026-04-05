@@ -3,6 +3,7 @@ package com.grocery.manager.ui.screens
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,11 +22,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.grocery.manager.data.local.ImageUtils
 import com.grocery.manager.data.local.Product
 import com.grocery.manager.data.local.Variant
+import com.grocery.manager.ui.theme.Gold
+import com.grocery.manager.ui.theme.SuccessGreen
+import com.grocery.manager.ui.theme.Teal500
+import com.grocery.manager.ui.theme.TextSecondary
 import com.grocery.manager.viewmodel.CategoryViewModel
 import com.grocery.manager.viewmodel.CompanyViewModel
 import com.grocery.manager.viewmodel.ProductViewModel
@@ -41,22 +47,14 @@ fun AddEditProductScreen(
 ) {
     val context = LocalContext.current
     val isEditMode = productId != null
-
     val companies by companyViewModel.companies.collectAsStateWithLifecycle()
-    val categories by categoryViewModel.categories.collectAsStateWithLifecycle()
 
     // Form state
     var productName by remember { mutableStateOf("") }
     var selectedImagePath by remember { mutableStateOf("") }
     var selectedCompanyId by remember { mutableStateOf<Int?>(null) }
-    var selectedCategoryId by remember { mutableStateOf<Int?>(null) }
     var variants by remember { mutableStateOf(listOf(VariantFormState())) }
-
-    // Dropdown state
     var companyDropdownExpanded by remember { mutableStateOf(false) }
-    var categoryDropdownExpanded by remember { mutableStateOf(false) }
-
-    // Validation
     var nameError by remember { mutableStateOf(false) }
 
     // Load existing product in edit mode
@@ -67,14 +65,14 @@ fun AddEditProductScreen(
                 productName = it.name
                 selectedImagePath = it.imageUri
                 selectedCompanyId = it.companyId
-                selectedCategoryId = it.categoryId
             }
         }
     }
 
     // Load existing variants in edit mode
     val existingVariants by if (productId != null)
-        productViewModel.getVariantsForProduct(productId).collectAsStateWithLifecycle(initialValue = emptyList())
+        productViewModel.getVariantsForProduct(productId)
+            .collectAsStateWithLifecycle(initialValue = emptyList())
     else
         remember { mutableStateOf(emptyList()) }
 
@@ -104,17 +102,19 @@ fun AddEditProductScreen(
     fun save() {
         nameError = productName.isBlank()
         if (nameError) return
-
         val product = Product(
             id = productId ?: 0,
             name = productName.trim(),
             imageUri = selectedImagePath,
             companyId = selectedCompanyId,
-            categoryId = selectedCategoryId
+            categoryId = null
         )
-
         val variantList = variants
-            .filter { it.label.isNotBlank() && it.buyingPrice.isNotBlank() && it.sellingPrice.isNotBlank() }
+            .filter {
+                it.label.isNotBlank() &&
+                        it.buyingPrice.isNotBlank() &&
+                        it.sellingPrice.isNotBlank()
+            }
             .map { v ->
                 Variant(
                     id = v.id,
@@ -124,7 +124,6 @@ fun AddEditProductScreen(
                     sellingPrice = v.sellingPrice.toDoubleOrNull() ?: 0.0
                 )
             }
-
         if (isEditMode) {
             productViewModel.updateProduct(product, variantList)
         } else {
@@ -134,6 +133,7 @@ fun AddEditProductScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -144,22 +144,26 @@ fun AddEditProductScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Teal500
+                        )
                     }
                 },
                 actions = {
                     TextButton(onClick = ::save) {
                         Text(
                             text = "Save",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontWeight = FontWeight.Bold
+                            color = Teal500,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         }
@@ -173,10 +177,73 @@ fun AddEditProductScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Image picker
-            ImagePickerSection(
-                imagePath = selectedImagePath,
-                onPickImage = { imagePicker.launch("image/*") }
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(MaterialTheme.shapes.large)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { imagePicker.launch("image/*") },
+                contentAlignment = Alignment.Center
+            ) {
+                if (selectedImagePath.isNotEmpty()) {
+                    AsyncImage(
+                        model = selectedImagePath,
+                        contentDescription = "Product image",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.3f))
+                    )
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(12.dp),
+                        shape = MaterialTheme.shapes.small,
+                        color = Teal500
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                "Change",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                } else {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            Icons.Default.AddPhotoAlternate,
+                            contentDescription = "Add photo",
+                            modifier = Modifier.size(48.dp),
+                            tint = Teal500.copy(alpha = 0.7f)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "Tap to add photo",
+                            fontSize = 13.sp,
+                            color = TextSecondary
+                        )
+                    }
+                }
+            }
 
             // Product name
             OutlinedTextField(
@@ -186,7 +253,11 @@ fun AddEditProductScreen(
                 modifier = Modifier.fillMaxWidth(),
                 isError = nameError,
                 supportingText = { if (nameError) Text("Name is required") },
-                singleLine = true
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Teal500,
+                    cursorColor = Teal500
+                )
             )
 
             // Company dropdown
@@ -200,9 +271,15 @@ fun AddEditProductScreen(
                     readOnly = true,
                     label = { Text("Company (optional)") },
                     trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = companyDropdownExpanded)
+                        ExposedDropdownMenuDefaults.TrailingIcon(
+                            expanded = companyDropdownExpanded
+                        )
                     },
-                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Teal500,
+                        cursorColor = Teal500
+                    )
                 )
                 ExposedDropdownMenu(
                     expanded = companyDropdownExpanded,
@@ -227,56 +304,56 @@ fun AddEditProductScreen(
                 }
             }
 
-            // Category dropdown
-            ExposedDropdownMenuBox(
-                expanded = categoryDropdownExpanded,
-                onExpandedChange = { categoryDropdownExpanded = !categoryDropdownExpanded }
-            ) {
-                OutlinedTextField(
-                    value = categories.find { it.id == selectedCategoryId }?.name ?: "None",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Category (optional)") },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryDropdownExpanded)
+            // Variants section
+            Text(
+                text = "VARIANTS",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextSecondary,
+                letterSpacing = 3.sp
+            )
+
+            variants.forEachIndexed { index, variant ->
+                VariantCard(
+                    variant = variant,
+                    index = index,
+                    showDelete = variants.size > 1,
+                    onVariantChange = { updated ->
+                        variants = variants.toMutableList().also { it[index] = updated }
                     },
-                    modifier = Modifier.fillMaxWidth().menuAnchor()
-                )
-                ExposedDropdownMenu(
-                    expanded = categoryDropdownExpanded,
-                    onDismissRequest = { categoryDropdownExpanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("None") },
-                        onClick = {
-                            selectedCategoryId = null
-                            categoryDropdownExpanded = false
-                        }
-                    )
-                    categories.forEach { category ->
-                        DropdownMenuItem(
-                            text = { Text(category.name) },
-                            onClick = {
-                                selectedCategoryId = category.id
-                                categoryDropdownExpanded = false
-                            }
-                        )
+                    onDelete = {
+                        variants = variants.toMutableList().also { it.removeAt(index) }
                     }
-                }
+                )
             }
 
-            // Variants section
-            VariantsSection(
-                variants = variants,
-                onVariantsChange = { variants = it }
-            )
+            // Add variant button
+            OutlinedButton(
+                onClick = { variants = variants + VariantFormState() },
+                modifier = Modifier.fillMaxWidth(),
+                border = ButtonDefaults.outlinedButtonBorder.copy(
+                    brush = androidx.compose.ui.graphics.SolidColor(Teal500)
+                )
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = null,
+                    tint = Teal500,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    "Add Variant",
+                    color = Teal500,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
-// Holds the form state for a single variant row
 data class VariantFormState(
     val id: Int = 0,
     val label: String = "",
@@ -285,182 +362,137 @@ data class VariantFormState(
 )
 
 @Composable
-private fun ImagePickerSection(
-    imagePath: String,
-    onPickImage: () -> Unit
+private fun VariantCard(
+    variant: VariantFormState,
+    index: Int,
+    showDelete: Boolean,
+    onVariantChange: (VariantFormState) -> Unit,
+    onDelete: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(180.dp)
-            .clip(MaterialTheme.shapes.large)
-            .clickable { onPickImage() },
-        contentAlignment = Alignment.Center
-    ) {
-        if (imagePath.isNotEmpty()) {
-            AsyncImage(
-                model = imagePath,
-                contentDescription = "Product image",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-            // Edit overlay
-            Surface(
-                modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
-                shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Text(
-                        "Change",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-            }
-        } else {
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = MaterialTheme.shapes.large
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        Icons.Default.AddPhotoAlternate,
-                        contentDescription = "Add photo",
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Tap to add photo",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-    }
-}
+    val buyDouble = variant.buyingPrice.toDoubleOrNull() ?: 0.0
+    val sellDouble = variant.sellingPrice.toDoubleOrNull() ?: 0.0
+    val profit = sellDouble - buyDouble
+    val isLoss = profit < 0 && buyDouble > 0 && sellDouble > 0
 
-@Composable
-private fun VariantsSection(
-    variants: List<VariantFormState>,
-    onVariantsChange: (List<VariantFormState>) -> Unit
-) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            // Variant header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Variants",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    text = "Variant ${index + 1}",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Teal500,
+                    letterSpacing = 1.sp
                 )
-                TextButton(
-                    onClick = {
-                        onVariantsChange(variants + VariantFormState())
+                if (showDelete) {
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Remove",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Add Variant")
                 }
             }
 
-            variants.forEachIndexed { index, variant ->
-                VariantRow(
-                    variant = variant,
-                    showDelete = variants.size > 1,
-                    onVariantChange = { updated ->
-                        onVariantsChange(variants.toMutableList().also { it[index] = updated })
-                    },
-                    onDelete = {
-                        onVariantsChange(variants.toMutableList().also { it.removeAt(index) })
-                    }
-                )
-                if (index < variants.lastIndex) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun VariantRow(
-    variant: VariantFormState,
-    showDelete: Boolean,
-    onVariantChange: (VariantFormState) -> Unit,
-    onDelete: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+            // Label
             OutlinedTextField(
                 value = variant.label,
                 onValueChange = { onVariantChange(variant.copy(label = it)) },
                 label = { Text("Label") },
-                placeholder = { Text("e.g. 1kg, 500ml") },
-                modifier = Modifier.weight(1f),
-                singleLine = true
+                placeholder = { Text("e.g. 1kg, 500ml, 1 litre") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Teal500,
+                    cursorColor = Teal500
+                )
             )
-            if (showDelete) {
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Remove variant",
-                        tint = MaterialTheme.colorScheme.error
+
+            // Prices
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = variant.buyingPrice,
+                    onValueChange = { onVariantChange(variant.copy(buyingPrice = it)) },
+                    label = { Text("Buy ৳") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Teal500,
+                        cursorColor = Teal500
                     )
+                )
+                OutlinedTextField(
+                    value = variant.sellingPrice,
+                    onValueChange = { onVariantChange(variant.copy(sellingPrice = it)) },
+                    label = { Text("Sell ৳") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Teal500,
+                        cursorColor = Teal500
+                    )
+                )
+            }
+
+            // Live profit preview
+            if (buyDouble > 0 && sellDouble > 0) {
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = if (isLoss)
+                        MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
+                    else
+                        SuccessGreen.copy(alpha = 0.1f)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = if (isLoss) "⚠ Selling below cost!" else "Profit",
+                            fontSize = 12.sp,
+                            color = if (isLoss)
+                                MaterialTheme.colorScheme.error
+                            else
+                                SuccessGreen,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = if (isLoss)
+                                "-৳${"%.2f".format(-profit)}"
+                            else
+                                "+৳${"%.2f".format(profit)} (${"%.1f".format((profit/buyDouble)*100)}%)",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isLoss)
+                                MaterialTheme.colorScheme.error
+                            else
+                                Gold
+                        )
+                    }
                 }
             }
-        }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            OutlinedTextField(
-                value = variant.buyingPrice,
-                onValueChange = { onVariantChange(variant.copy(buyingPrice = it)) },
-                label = { Text("Buy ৳") },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true
-            )
-            OutlinedTextField(
-                value = variant.sellingPrice,
-                onValueChange = { onVariantChange(variant.copy(sellingPrice = it)) },
-                label = { Text("Sell ৳") },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true
-            )
         }
     }
 }

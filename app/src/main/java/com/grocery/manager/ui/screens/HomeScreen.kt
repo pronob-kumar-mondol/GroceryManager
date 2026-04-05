@@ -1,5 +1,6 @@
 package com.grocery.manager.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,11 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.grocery.manager.data.local.Product
 import com.grocery.manager.ui.components.ProductCard
 import com.grocery.manager.ui.components.RecentProductsRow
 import com.grocery.manager.ui.components.SearchBar
+import com.grocery.manager.ui.theme.Teal500
+import com.grocery.manager.ui.theme.TextSecondary
 import com.grocery.manager.viewmodel.ProductViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,109 +35,152 @@ fun HomeScreen(
     val searchQuery by productViewModel.searchQuery.collectAsStateWithLifecycle()
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Grocery Manager",
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToCompanies) {
-                        Icon(
-                            imageVector = Icons.Default.Business,
-                            contentDescription = "Companies"
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(top = 48.dp, start = 20.dp, end = 20.dp, bottom = 16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "GROCERY",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextSecondary,
+                            letterSpacing = 4.sp
+                        )
+                        Text(
+                            text = "Manager",
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Teal500,
+                            letterSpacing = (-0.5).sp
                         )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    Row {
+                        IconButton(onClick = onNavigateToCompanies) {
+                            Icon(
+                                imageVector = Icons.Default.Business,
+                                contentDescription = "Companies",
+                                tint = Teal500,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SearchBar(
+                    query = searchQuery,
+                    onQueryChange = productViewModel::onSearchQueryChange,
+                    modifier = Modifier.fillMaxWidth()
                 )
-            )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNavigateToAdd,
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = Teal500,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                elevation = FloatingActionButtonDefaults.elevation(8.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Add Product",
-                    tint = MaterialTheme.colorScheme.onPrimary
+                    modifier = Modifier.size(28.dp)
                 )
             }
         }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                top = 16.dp,
+                bottom = 100.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Search bar
-            SearchBar(
-                query = searchQuery,
-                onQueryChange = productViewModel::onSearchQueryChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            )
-
-            // Main list
-            LazyColumn(
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    bottom = 100.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Recent products section
-                if (recentProducts.isNotEmpty() && searchQuery.isBlank()) {
-                    item {
-                        RecentProductsRow(
-                            products = recentProducts,
-                            onProductClick = { product ->
-                                productViewModel.addToRecentSearches(product.id)
-                                onNavigateToEdit(product.id)
-                            }
+            // Recent products
+            if (recentProducts.isNotEmpty() && searchQuery.isBlank()) {
+                item {
+                    RecentProductsRow(
+                        products = recentProducts,
+                        onProductClick = { product ->
+                            productViewModel.addToRecentSearches(product.id)
+                            onNavigateToEdit(product.id)
+                        }
+                    )
+                }
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.outline
                         )
-                    }
-                    item {
                         Text(
-                            text = "All Products",
-                            style = MaterialTheme.typography.titleSmall,
+                            text = "ALL PRODUCTS",
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                            color = TextSecondary,
+                            letterSpacing = 3.sp
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.outline
                         )
                     }
                 }
+            }
 
-                // Product list or empty state
-                if (products.isEmpty()) {
-                    item {
-                        EmptyState(
-                            isSearching = searchQuery.isNotBlank(),
-                            modifier = Modifier.fillParentMaxSize()
-                        )
-                    }
-                } else {
-                    items(products, key = { it.id }) { product ->
-                        ProductCard(
-                            product = product,
-                            productViewModel = productViewModel,
-                            onEdit = {
-                                productViewModel.addToRecentSearches(product.id)
-                                onNavigateToEdit(product.id)
-                            },
-                            onDelete = {
-                                productViewModel.deleteProduct(product)
-                            }
-                        )
-                    }
+            // Product count
+            if (products.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "${products.size} product${if (products.size != 1) "s" else ""}",
+                        fontSize = 11.sp,
+                        color = TextSecondary,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                    )
+                }
+            }
+
+            // Product list or empty state
+            if (products.isEmpty()) {
+                item {
+                    EmptyState(isSearching = searchQuery.isNotBlank())
+                }
+            } else {
+                items(products, key = { it.id }) { product ->
+                    ProductCard(
+                        product = product,
+                        productViewModel = productViewModel,
+                        onEdit = {
+                            productViewModel.addToRecentSearches(product.id)
+                            onNavigateToEdit(product.id)
+                        },
+                        onDelete = {
+                            productViewModel.deleteProduct(product)
+                        }
+                    )
                 }
             }
         }
@@ -142,34 +188,43 @@ fun HomeScreen(
 }
 
 @Composable
-private fun EmptyState(
-    isSearching: Boolean,
-    modifier: Modifier = Modifier
-) {
+private fun EmptyState(isSearching: Boolean) {
     Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 80.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(
-            imageVector = Icons.Default.ShoppingCart,
-            contentDescription = null,
-            modifier = Modifier.size(72.dp),
-            tint = MaterialTheme.colorScheme.outlineVariant
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .background(
+                    color = Teal500.copy(alpha = 0.1f),
+                    shape = MaterialTheme.shapes.extraLarge
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = if (isSearching) Icons.Default.SearchOff
+                else Icons.Default.Inventory2,
+                contentDescription = null,
+                tint = Teal500.copy(alpha = 0.6f),
+                modifier = Modifier.size(36.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(20.dp))
         Text(
-            text = if (isSearching) "No products found" else "No products yet",
-            style = MaterialTheme.typography.titleMedium,
+            text = if (isSearching) "No results found" else "No products yet",
+            fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurface
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = if (isSearching) "Try searching something else"
+            text = if (isSearching) "Try a different search term"
             else "Tap the + button to add your first product",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.outline,
+            fontSize = 13.sp,
+            color = TextSecondary,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 40.dp)
         )
