@@ -2,7 +2,7 @@
 
 A modern inventory, sales, and purchase management platform built to help businesses track stock, monitor sales performance, and manage suppliers and customers — all from a single, clean dashboard.
 
-![Full Dashboard Preview](screenshots/dashboard-full.png)
+![Full Dashboard Preview](screenshots/dashboard-full.png.png)
 
 ---
 
